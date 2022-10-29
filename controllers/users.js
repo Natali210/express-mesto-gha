@@ -54,6 +54,9 @@ const changeUserInfo = async (req, res) => {
     if (err.message === 'NotFound') {
       return res.status(404).send({ message: 'Пользователь c данным _id не найден' });
     }
+    if (err instanceof mongoose.Error.ValidationError) {
+      return res.status(400).send({ message: 'Некорректные данные для обновления профиля', err });
+    }
     if (err instanceof mongoose.Error.CastError) {
       return res.status(400).send({ message: 'Указан некорректный _id', err });
     }
