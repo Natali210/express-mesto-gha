@@ -6,14 +6,14 @@ const userSchema = new Schema({
   name: {
     type: String,
     required: true,
-    minlenght: 2,
-    maxlenght: 30,
+    minlength: 2,
+    maxlength: 30,
   },
   about: {
     type: String,
     required: true,
-    minlenght: 2,
-    maxlenght: 30,
+    minlength: 2,
+    maxlength: 30,
   },
   avatar: {
     type: String,
