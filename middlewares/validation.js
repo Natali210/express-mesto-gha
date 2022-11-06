@@ -27,7 +27,7 @@ const IdValidation = (typeId) => celebrate({
 const profileValidation = celebrate({
   body: Joi.object().keys({
     name: Joi.string().min(2).max(30),
-    about: Joi.string().min(2).max(20),
+    about: Joi.string().min(2).max(30),
   }),
 });
 

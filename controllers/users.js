@@ -20,7 +20,11 @@ const createNewUser = async (req, res, next) => {
     const user = await User.create({
       name, about, avatar, email, password: hashedPassword, // хеш записан в базу
     });
-    return res.status(201).send({ message: 'Пользователь создан' });
+    return res.status(201).send({
+      data: {
+        name, about, avatar, email,
+      },
+    });
   } catch (err) {
     if (err.name === 'ValidationError') {
       return next(new RequestError('Некорректные данные пользователя'));
