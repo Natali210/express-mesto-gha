@@ -16,10 +16,11 @@ const createNewUser = async (req, res, next) => {
       return next(new RequestError('Отсутствует email или пароль'));
     }
     const hashedPassword = await bcrypt.hash(password, 10);
+    // eslint-disable-next-line no-unused-vars
     const user = await User.create({
       name, about, avatar, email, password: hashedPassword, // хеш записан в базу
     });
-    return res.status(201).send(user);
+    return res.status(201).send({ message: 'Пользователь создан' });
   } catch (err) {
     if (err.name === 'ValidationError') {
       return next(new RequestError('Некорректные данные пользователя'));
@@ -61,8 +62,8 @@ const getUserById = async (req, res, next) => {
 // Получение информации о текущем пользователе
 const currentUser = async (req, res, next) => {
   try {
-    const myUser = await User.findOne({ _id: req.user._id });
-    return res.send(myUser);
+    const user = await User.findById(req.user._id);
+    return res.send(user);
   } catch (err) {
     return next(err);
   }

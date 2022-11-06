@@ -8,6 +8,7 @@ const { createNewUser } = require('./controllers/users');
 const { login } = require('./controllers/login');
 const { auth } = require('./middlewares/auth');
 const handleErrors = require('./middlewares/handleErrors');
+const NotFoundError = require('./errors/NotFoundError');
 const { newUserValidation, loginValidation } = require('./middlewares/validation');
 
 // Берем порт из переменных окружения
@@ -30,14 +31,13 @@ app.post('/signin', loginValidation, login);
 // Авторизация для всех других страниц приложения
 app.use(auth);
 
-// Выход
-app.get('/signout', (req, res) => {
-  res.clearCookie('jwt').send({ message: 'Выход' });
-});
-
 // Применяем маршруты как мидлвэры
 app.use(userRoutes);
 app.use(cardRoutes);
+
+app.use((req, res, next) => {
+  next(new NotFoundError('Страница не найдена'));
+});
 
 app.use(errors());
 app.use(handleErrors);

@@ -40,6 +40,8 @@ const userSchema = new Schema({
   },
 }, {
   versionKey: false,
+}, {
+  autoIndex: false,
 });
 
 module.exports = mongoose.model('user', userSchema);
