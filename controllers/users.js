@@ -1,49 +1,75 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 const User = require('../models/user');
+const { MONGO_DB_CODE } = require('../utils/constants');
+const RequestError = require('../errors/RequestError');
+const RepeatingDataError = require('../errors/RepeatingDataError');
+const NotFoundError = require('../errors/NotFoundError');
 
 // Создание пользователя
-const createNewUser = async (req, res) => {
+const createNewUser = async (req, res, next) => {
+  const {
+    name, about, avatar, email, password,
+  } = req.body;
   try {
-    const { name, about, avatar } = req.body;
-    const user = await User.create({ name, about, avatar });
+    if (!email || !password) {
+      return next(new RequestError('Отсутствует email или пароль'));
+    }
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await User.create({
+      name, about, avatar, email, password: hashedPassword, // хеш записан в базу
+    });
     return res.status(201).send(user);
   } catch (err) {
-    if (err instanceof mongoose.Error.ValidationError) {
-      return res.status(400).send({ message: 'Ошибка в данных пользователя', err });
+    if (err.name === 'ValidationError') {
+      return next(new RequestError('Некорректные данные пользователя'));
     }
-    return res.status(500).send({ message: 'Ошибка на сервере', err });
+    if (err.code === MONGO_DB_CODE) {
+      return next(new RepeatingDataError('Такой пользователь уже существует'));
+    }
+    return next(err);
   }
 };
 
 // Получение списка пользователей
-const getUsers = async (req, res) => {
+const getUsers = async (req, res, next) => {
   try {
     const user = await User.find({});
     return res.send(user);
   } catch (err) {
-    return res.status(500).send({ message: 'Ошибка получения пользователей с сервера', err });
+    return next(err);
   }
 };
 
 // Получение пользователя по его _id
-const getUserById = async (req, res) => {
+const getUserById = async (req, res, next) => {
   try {
     const selectedUser = await User.findById(req.params.userId)
       .orFail(new Error('NotFound'));
     return res.send(selectedUser);
   } catch (err) {
     if (err.message === 'NotFound') {
-      return res.status(404).send({ message: 'Пользователь c данным _id не найден' });
+      return next(new NotFoundError('Пользователь c данным _id не найден'));
     }
     if (err instanceof mongoose.Error.CastError) {
-      return res.status(400).send({ message: 'Указан некорректный _id', err });
+      return next(new RequestError('Указан некорректный _id'));
     }
-    return res.status(500).send({ message: 'Ошибка на сервере', err });
+    return next(err);
+  }
+};
+
+// Получение информации о текущем пользователе
+const currentUser = async (req, res, next) => {
+  try {
+    const myUser = await User.findOne({ _id: req.user._id });
+    return res.send(myUser);
+  } catch (err) {
+    return next(err);
   }
 };
 
 // Обновление информации о пользователе - проверка, что пользователь есть + обновление информации
-const changeUserInfo = async (req, res) => {
+const changeUserInfo = async (req, res, next) => {
   try {
     const { name, about } = req.body;
     // eslint-disable-next-line max-len
@@ -52,20 +78,20 @@ const changeUserInfo = async (req, res) => {
     return res.send(changedProfile);
   } catch (err) {
     if (err.message === 'NotFound') {
-      return res.status(404).send({ message: 'Пользователь c данным _id не найден' });
+      return next(new NotFoundError('Пользователь c данным _id не найден'));
     }
     if (err instanceof mongoose.Error.ValidationError) {
-      return res.status(400).send({ message: 'Некорректные данные для обновления профиля', err });
+      return next(new RequestError('Некорректные данные для обновления профиля'));
     }
     if (err instanceof mongoose.Error.CastError) {
-      return res.status(400).send({ message: 'Указан некорректный _id', err });
+      return next(new RequestError('Указан некорректный _id'));
     }
-    return res.status(500).send({ message: 'Ошибка на сервере', err });
+    return next(err);
   }
 };
 
 // Обновление аватара пользователя
-const changeUserAvatar = async (req, res) => {
+const changeUserAvatar = async (req, res, next) => {
   try {
     const { avatar } = req.body;
     // eslint-disable-next-line max-len
@@ -74,12 +100,12 @@ const changeUserAvatar = async (req, res) => {
     return res.send(changedAvatar);
   } catch (err) {
     if (err.message === 'NotFound') {
-      return res.status(404).send({ message: 'Пользователь c данным _id не найден' });
+      return next(new NotFoundError('Пользователь c данным _id не найден'));
     }
     if (err instanceof mongoose.Error.CastError) {
-      return res.status(400).send({ message: 'Указан некорректный _id', err });
+      return next(new RequestError('Указан некорректный _id'));
     }
-    return res.status(500).send({ message: 'Ошибка на сервере', err });
+    return next(err);
   }
 };
 
@@ -87,6 +113,7 @@ module.exports = {
   createNewUser,
   getUsers,
   getUserById,
+  currentUser,
   changeUserInfo,
   changeUserAvatar,
 };
