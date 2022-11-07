@@ -51,6 +51,7 @@ const getUserById = async (req, res, next) => {
   try {
     const selectedUser = await User.findById(req.params.userId)
       .orFail(new Error('NotFound'));
+    console.log(req.params.userId);
     return res.send(selectedUser);
   } catch (err) {
     if (err.message === 'NotFound') {
@@ -63,10 +64,10 @@ const getUserById = async (req, res, next) => {
   }
 };
 
-// Получение информации о текущем пользователе
+// Обновление информации о пользователе - проверка, что пользователь есть + обновление информации
 const currentUser = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user._id);
+    const user = await User.findById({ _id: req.user._id });
     return res.send(user);
   } catch (err) {
     return next(err);
@@ -80,6 +81,7 @@ const changeUserInfo = async (req, res, next) => {
     // eslint-disable-next-line max-len
     const changedProfile = await User.findByIdAndUpdate(req.user._id, { name, about }, { new: true, runValidators: true })
       .orFail(new Error('NotFound'));
+    console.log(req.user._id);
     return res.send(changedProfile);
   } catch (err) {
     if (err.message === 'NotFound') {

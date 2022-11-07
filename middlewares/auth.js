@@ -6,7 +6,6 @@ module.exports.auth = (req, res, next) => {
   const { jwt } = req.cookies;
   let payload;
 
-  console.log(jwt);
   if (!jwt) {
     return next(new AuthorizationError('Необходима авторизация'));
   }
