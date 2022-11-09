@@ -2,14 +2,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
 const { errors } = require('celebrate');
-const userRoutes = require('./routes/users');
-const cardRoutes = require('./routes/cards');
-const { createNewUser } = require('./controllers/users');
-const { login } = require('./controllers/login');
-const { auth } = require('./middlewares/auth');
+const routes = require('./routes');
 const handleErrors = require('./middlewares/handleErrors');
-const NotFoundError = require('./errors/NotFoundError');
-const { newUserValidation, loginValidation } = require('./middlewares/validation');
 
 // Берем порт из переменных окружения
 const { PORT = 3000, MONGO_URL = 'mongodb://localhost:27017/mestodb' } = process.env;
@@ -24,20 +18,7 @@ app.use(express.json());
 // Мидлвэр, чтобы извлекать данные из заголовка cookie
 app.use(cookieParser());
 
-// Роуты, которым авторизация не нужна
-app.post('/signup', newUserValidation, createNewUser);
-app.post('/signin', loginValidation, login);
-
-// Авторизация для всех других страниц приложения
-app.use(auth);
-
-// Применяем маршруты как мидлвэры
-app.use(userRoutes);
-app.use(cardRoutes);
-
-app.use((req, res, next) => {
-  next(new NotFoundError('Страница не найдена'));
-});
+app.use(routes);
 
 app.use(errors());
 app.use(handleErrors);
