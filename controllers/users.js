@@ -12,9 +12,6 @@ const createNewUser = async (req, res, next) => {
     name, about, avatar, email, password,
   } = req.body;
   try {
-    if (!email || !password) {
-      return next(new RequestError('Отсутствует email или пароль'));
-    }
     const hashedPassword = await bcrypt.hash(password, 10);
     // eslint-disable-next-line no-unused-vars
     const user = await User.create({
@@ -50,13 +47,9 @@ const getUsers = async (req, res, next) => {
 const getUserById = async (req, res, next) => {
   try {
     const selectedUser = await User.findById(req.params.userId)
-      .orFail(new Error('NotFound'));
-    console.log(req.params.userId);
+      .orFail(new NotFoundError('Пользователь c данным _id не найден'));
     return res.send(selectedUser);
   } catch (err) {
-    if (err.message === 'NotFound') {
-      return next(new NotFoundError('Пользователь c данным _id не найден'));
-    }
     if (err instanceof mongoose.Error.CastError) {
       return next(new RequestError('Указан некорректный _id'));
     }
@@ -80,13 +73,9 @@ const changeUserInfo = async (req, res, next) => {
     const { name, about } = req.body;
     // eslint-disable-next-line max-len
     const changedProfile = await User.findByIdAndUpdate(req.user._id, { name, about }, { new: true, runValidators: true })
-      .orFail(new Error('NotFound'));
-    console.log(req.user._id);
+      .orFail(new NotFoundError('Пользователь c данным _id не найден'));
     return res.send(changedProfile);
   } catch (err) {
-    if (err.message === 'NotFound') {
-      return next(new NotFoundError('Пользователь c данным _id не найден'));
-    }
     if (err instanceof mongoose.Error.ValidationError) {
       return next(new RequestError('Некорректные данные для обновления профиля'));
     }
@@ -103,14 +92,14 @@ const changeUserAvatar = async (req, res, next) => {
     const { avatar } = req.body;
     // eslint-disable-next-line max-len
     const changedAvatar = await User.findByIdAndUpdate(req.user._id, { avatar }, { new: true, runValidators: true })
-      .orFail(new Error('NotFound'));
+      .orFail(new NotFoundError('Пользователь c данным _id не найден'));
     return res.send(changedAvatar);
   } catch (err) {
-    if (err.message === 'NotFound') {
-      return next(new NotFoundError('Пользователь c данным _id не найден'));
-    }
     if (err instanceof mongoose.Error.CastError) {
       return next(new RequestError('Указан некорректный _id'));
+    }
+    if (err instanceof mongoose.Error.ValidationError) {
+      return next(new RequestError('Некорректные данные для обновления профиля'));
     }
     return next(err);
   }

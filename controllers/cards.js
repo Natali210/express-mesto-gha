@@ -34,16 +34,13 @@ const deleteCard = async (req, res, next) => {
   try {
     // eslint-disable-next-line max-len
     const card = await Card.findById(req.params.cardId)
-      .orFail(new Error('NotFound'));
+      .orFail(new NotFoundError('Карточка c данным _id не найдена'));
     if (card.owner.toString() !== req.user._id) {
       return next(new NoRightsError('Карточка принадлежит другому пользователю'));
     }
     const cardToDelete = await Card.findByIdAndRemove(req.params.cardId);
     return res.send(cardToDelete);
   } catch (err) {
-    if (err.message === 'NotFound') {
-      return next(new NotFoundError('Карточка c данным _id не найдена'));
-    }
     if (err instanceof mongoose.Error.CastError) {
       return next(new RequestError('Некорректные данные карточки'));
     }
@@ -58,12 +55,9 @@ const putLikeOnCard = async (req, res, next) => {
       req.params.cardId,
       { $addToSet: { likes: req.user._id } }, // добавить _id в массив, если его там нет
       { new: true },
-    ).orFail(new Error('NotFound'));
+    ).orFail(new NotFoundError('Карточка c данным _id не найдена'));
     return res.send(likeOnCard);
   } catch (err) {
-    if (err.message === 'NotFound') {
-      return next(new NotFoundError('Карточка c данным _id не найдена'));
-    }
     if (err instanceof mongoose.Error.CastError) {
       return next(new RequestError('Некорректные данные карточки'));
     }
@@ -78,12 +72,9 @@ const deleteLikeFromCard = async (req, res, next) => {
       req.params.cardId,
       { $pull: { likes: req.user._id } }, // убрать _id из массива
       { new: true },
-    ).orFail(new Error('NotFound'));
+    ).orFail(new NotFoundError('Карточка c данным _id не найдена'));
     return res.send(dislikeCard);
   } catch (err) {
-    if (err.message === 'NotFound') {
-      return next(new NotFoundError('Карточка c данным _id не найдена'));
-    }
     if (err instanceof mongoose.Error.CastError) {
       return next(new RequestError('Некорректные данные карточки'));
     }
